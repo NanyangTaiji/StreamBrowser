@@ -1,5 +1,8 @@
 package codes.nh.streambrowser.screens.stream;
 
+import static codes.nh.streambrowser.utils.AppUtils.copyToClipboard;
+
+import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
@@ -83,6 +86,9 @@ public class StreamsFragment extends SheetFragment {
     }
 
     private void openInfoFragment(Stream stream) {
+        //TODO ny
+        copyToClipboard(getContext(), stream.getStreamUrl());
+        //
         streamViewModel.setInfoStream(stream);
         SheetRequest request = new SheetRequest(StreamInfoFragment.class);
         mainViewModel.openSheet(request);

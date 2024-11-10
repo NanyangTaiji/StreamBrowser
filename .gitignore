@@ -1,5 +1,5 @@
 /.idea/
 /.gradle/
-/app/build/
+**/build/
 /local.properties
-/app/schemas/
+**/schemas/

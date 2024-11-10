@@ -1,0 +1,226 @@
+package codes.nh.streambrowser.screens.cast;
+
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.util.AttributeSet;
+import android.util.DisplayMetrics;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
+import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
+import java.util.Map;
+
+import codes.nh.streambrowser.screens.browser.BrowserChromeClient;
+import codes.nh.streambrowser.screens.browser.BrowserClient;
+import codes.nh.streambrowser.screens.stream.Stream;
+import codes.nh.streambrowser.utils.AppUtils;
+
+public class Browser extends WebView {
+
+    public Browser(@NonNull Context context, @Nullable AttributeSet attrs) {
+        super(context, attrs);
+
+        initializeBrowser();
+    }
+
+    private void initializeBrowser() {
+        WebSettings settings = getSettings();
+
+        settings.setBuiltInZoomControls(true);
+        settings.setDisplayZoomControls(false);
+        settings.setUseWideViewPort(true);
+        settings.setLoadWithOverviewMode(true);
+
+        settings.setJavaScriptEnabled(true);
+        settings.setMediaPlaybackRequiresUserGesture(false);
+        settings.setDomStorageEnabled(true);
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+
+        BrowserClient browserClient = new BrowserClient();
+        setWebViewClient(browserClient);
+        //CookieManager.getInstance().setAcceptThirdPartyCookies(this, true);
+        //TODO ny
+      //  BrowserChromeClient browserChromeClient = new BrowserChromeClient();
+      //  setWebChromeClient(browserChromeClient);
+        FullScreenWebChromeClient fullScreenWebChromeClient =new FullScreenWebChromeClient();
+        setWebChromeClient(fullScreenWebChromeClient);
+    }
+
+
+    //TODO ny
+    private ViewGroup rootView;      // Root view of the activity/fragment to add the fullscreen view
+    private View customView;         // View for fullscreen video
+    private WebChromeClient.CustomViewCallback customViewCallback;
+    private class FullScreenWebChromeClient extends BrowserChromeClient {
+
+        @Override
+        public void onShowCustomView(View view, CustomViewCallback callback) {
+            if (customView != null) {
+                callback.onCustomViewHidden();
+                return;
+            }
+
+            // Enable fullscreen mode
+            customView = view;
+            customViewCallback = callback;
+            rootView = (ViewGroup) getParent();
+
+            // Wait until the view is measured before adjusting the aspect ratio
+            customView.getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+                @Override
+                public boolean onPreDraw() {
+                    // Adjust the layout based on aspect ratio once the view is measured
+                    adjustFullscreenViewAspectRatio(view);
+
+                    // Remove the listener after drawing is complete
+                    customView.getViewTreeObserver().removeOnPreDrawListener(this);
+                    return true;
+                }
+            });
+
+            rootView.addView(customView, new ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+            ));
+            setVisibility(View.GONE);
+        }
+
+
+        @Override
+        public void onHideCustomView() {
+            if (customView == null) {
+                return;
+            }
+
+            // Exit fullscreen mode
+            rootView.removeView(customView);
+            customView = null;
+            customViewCallback.onCustomViewHidden();
+            setVisibility(View.VISIBLE);
+        }
+
+        private void adjustFullscreenViewAspectRatio(View videoView) {
+            // Measure the video dimensions or default to a common aspect ratio (e.g., 16:9)
+            int videoWidth = videoView.getWidth();
+            int videoHeight = videoView.getHeight();
+
+            // Fallback if we don't have valid width and height yet
+            if (videoWidth == 0 || videoHeight == 0) {
+                videoWidth = 16;
+                videoHeight = 9;
+            }
+
+            // Calculate the aspect ratio
+            float aspectRatio = (float) videoWidth / videoHeight;
+
+            // Get the current screen dimensions
+            DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
+            int screenWidth = displayMetrics.widthPixels;
+            int screenHeight = displayMetrics.heightPixels;
+
+            // Adjust the layout params based on screen orientation and aspect ratio
+            ViewGroup.LayoutParams params = videoView.getLayoutParams();
+            if (screenWidth > screenHeight) { // Landscape
+                params.width = screenWidth;
+                params.height = (int) (screenWidth / aspectRatio);
+            } else { // Portrait
+                params.width = (int) (screenHeight * aspectRatio);
+                params.height = screenHeight;
+            }
+            videoView.setLayoutParams(params);
+        }
+    }
+
+    // Add a method to detect if video is in fullscreen
+    public boolean isInFullscreen() {
+        return customView != null;
+    }
+
+    //-------------------------------
+
+    private boolean desktopMode = false;
+
+    public boolean getDesktopMode() {
+        return desktopMode;
+    }
+
+    public void setDesktopMode(boolean enabled) {
+        desktopMode = enabled;
+
+        String userAgent = getSettings().getUserAgentString();
+        if (enabled) {
+            userAgent = userAgent
+                    .replace(" Mobile ", " Dummy1 ")
+                    .replace(" Android ", " Dummy2 ");
+        } else {
+            userAgent = userAgent
+                    .replace(" Dummy1 ", " Mobile ")
+                    .replace(" Dummy2 ", " Android ");
+        }
+        getSettings().setUserAgentString(userAgent);
+        AppUtils.log("new user agent = " + userAgent);
+
+        //getSettings().setUseWideViewPort(enabled);
+    }
+
+    @Override
+    public void loadUrl(@NonNull String url) {
+        super.loadUrl(url);
+        getListener().onRequestPage(url);
+    }
+
+    @Override
+    public void loadUrl(@NonNull String url, @NonNull Map<String, String> additionalHttpHeaders) {
+        super.loadUrl(url, additionalHttpHeaders);
+        getListener().onRequestPage(url);
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        getListener().onTouch();
+        return super.onTouchEvent(event);
+    }
+
+    //listener
+
+    private Listener listener;
+
+    public Listener getListener() {
+        return listener;
+    }
+
+    public void setListener(Listener listener) {
+        this.listener = listener;
+    }
+
+    interface Listener {
+
+        void onRequestPage(String url);
+
+        void onStartLoadPage(String url);
+
+        void onFinishLoadPage(String url);
+
+        void onUpdateUrl(String url);
+
+        void onUpdateTitle(String title);
+
+        void onUpdateFavicon(Bitmap favicon);
+
+        void onUpdateProgress(int progress);
+
+        boolean onRedirect(String oldUrl, String newUrl);
+
+        void onFindStream(Stream stream);
+
+        void onTouch();
+    }
+
+}

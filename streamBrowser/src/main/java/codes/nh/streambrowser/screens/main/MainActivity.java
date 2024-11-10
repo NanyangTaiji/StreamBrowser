@@ -1,6 +1,8 @@
 package codes.nh.streambrowser.screens.main;
 
+import android.content.Intent;
 import android.content.res.ColorStateList;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 
@@ -17,6 +19,7 @@ import com.google.android.material.snackbar.Snackbar;
 
 import codes.nh.streambrowser.R;
 import codes.nh.streambrowser.screens.bookmark.BookmarksFragment;
+import codes.nh.streambrowser.screens.browser.BrowserRequest;
 import codes.nh.streambrowser.screens.browser.BrowserViewModel;
 import codes.nh.streambrowser.screens.cast.CastFullControllerFragment;
 import codes.nh.streambrowser.screens.cast.CastManager;
@@ -166,7 +169,35 @@ public class MainActivity extends AppCompatActivity {
         getOnBackPressedDispatcher().addCallback(backPressedCallback);
 
         castViewModel.getCastManager().startSessionListener();
+        //TODO ny
+        onNewIntent(getIntent());
+
     }
+
+    //TODO ny---------
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        handleIntent(intent);
+    }
+
+    private void handleIntent(Intent intent) {
+        String url = null;
+        if (intent == null) return;
+        if (Intent.ACTION_VIEW.equals(intent.getAction())) {
+            Uri data = intent.getData();
+            if (data != null) {
+                url = data.toString();
+            }
+        } else
+            url = intent.getStringExtra(Intent.EXTRA_TEXT);
+        if (url != null) {
+            BrowserViewModel browserViewModel = new ViewModelProvider(this).get(BrowserViewModel.class);
+            browserViewModel.setRequestLoadUrl(new BrowserRequest(url));
+        }
+    }
+
+    //TODO ny--------------------
 
     @Override
     protected void onDestroy() {

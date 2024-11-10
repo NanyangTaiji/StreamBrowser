@@ -3,12 +3,14 @@ package codes.nh.streambrowser.screens.player;
 import android.os.Bundle;
 import android.widget.Toast;
 
+import androidx.annotation.OptIn;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.media3.common.Player;
+import androidx.media3.common.util.UnstableApi;
 import androidx.media3.ui.PlayerView;
 
 import org.json.JSONObject;
@@ -28,7 +30,7 @@ public class PlayerActivity extends AppCompatActivity {
 
     private Stream stream;
 
-    @Override
+    @Override @OptIn(markerClass = UnstableApi.class)
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         hideSystemBars();
@@ -67,8 +69,9 @@ public class PlayerActivity extends AppCompatActivity {
         });
     }
 
+    @OptIn(markerClass = UnstableApi.class)
     @Override
-    public void onStart() {
+    public void  onStart() {
         super.onStart();
 
         Player player = playerViewModel.start(stream);

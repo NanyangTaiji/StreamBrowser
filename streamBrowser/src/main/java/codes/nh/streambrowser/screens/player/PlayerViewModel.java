@@ -4,11 +4,13 @@ import android.app.Application;
 import android.content.Context;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.OptIn;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.MutableLiveData;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
+import androidx.media3.common.util.UnstableApi;
 import androidx.media3.datasource.DefaultHttpDataSource;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
@@ -25,8 +27,8 @@ public class PlayerViewModel extends AndroidViewModel {
     }
 
     private Player player;
-
-    public Player start(Stream stream) { //todo
+    @UnstableApi
+    public Player  start(Stream stream) { //todo
         Context context = getApplication().getApplicationContext();
 
         DefaultHttpDataSource.Factory httpDataSourceFactory = new DefaultHttpDataSource.Factory();

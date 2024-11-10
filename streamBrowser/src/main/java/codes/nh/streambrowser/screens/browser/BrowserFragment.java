@@ -1,6 +1,7 @@
 package codes.nh.streambrowser.screens.browser;
 
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.View;
@@ -8,6 +9,7 @@ import android.view.inputmethod.EditorInfo;
 import android.widget.ImageButton;
 import android.widget.PopupMenu;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -184,6 +186,27 @@ public class BrowserFragment extends Fragment {
         MediaRouteButton mediaRouteButton = view.findViewById(R.id.media_route_button);
         CastButtonFactory.setUpMediaRouteButton(requireContext().getApplicationContext(), mediaRouteButton);
 
+    //TODO ny
+        // Setup custom back press handling
+        requireActivity().getOnBackPressedDispatcher().addCallback(
+                getViewLifecycleOwner(),
+                new OnBackPressedCallback(true) {
+                    @Override
+                    public void handleOnBackPressed() {
+                        if (webView.isInFullscreen()) {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                webView.getWebChromeClient().onHideCustomView();
+                            }
+                        } else {
+                            // Calls the system back press if not in fullscreen
+                            setEnabled(false);  // Temporarily disable to allow default behavior
+                            requireActivity().onBackPressed();
+                        }
+                    }
+                }
+        );
+
+
     }
 
     @Override
@@ -242,5 +265,6 @@ public class BrowserFragment extends Fragment {
 
         popup.show();
     }
+
 
 }

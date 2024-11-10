@@ -4,6 +4,9 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
+import android.view.View;
+import android.view.ViewGroup;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 
@@ -38,12 +41,64 @@ public class Browser extends WebView {
 
         BrowserClient browserClient = new BrowserClient();
         setWebViewClient(browserClient);
-
-        BrowserChromeClient browserChromeClient = new BrowserChromeClient();
-        setWebChromeClient(browserChromeClient);
-
         //CookieManager.getInstance().setAcceptThirdPartyCookies(this, true);
+        //TODO ny
+      //  BrowserChromeClient browserChromeClient = new BrowserChromeClient();
+      //  setWebChromeClient(browserChromeClient);
+        FullScreenWebChromeClient fullScreenWebChromeClient =new FullScreenWebChromeClient();
+        setWebChromeClient(fullScreenWebChromeClient);
     }
+
+
+    //TODO ny
+    private ViewGroup rootView;      // Root view of the activity/fragment to add the fullscreen view
+    private View customView;         // View for fullscreen video
+    private WebChromeClient.CustomViewCallback customViewCallback;
+    private class FullScreenWebChromeClient extends BrowserChromeClient {
+
+        @Override
+        public void onShowCustomView(View view, CustomViewCallback callback) {
+            if (customView != null) {
+                callback.onCustomViewHidden();
+                return;
+            }
+
+            // Enable fullscreen mode
+            customView = view;
+            customViewCallback = callback;
+            rootView = (ViewGroup) getParent();
+
+            // Adjust layout params based on aspect ratio
+           // adjustFullscreenViewAspectRatio(view);
+
+            rootView.addView(customView, new ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+            ));
+            setVisibility(View.GONE);
+        }
+
+
+        @Override
+        public void onHideCustomView() {
+            if (customView == null) {
+                return;
+            }
+
+            // Exit fullscreen mode
+            rootView.removeView(customView);
+            customView = null;
+            customViewCallback.onCustomViewHidden();
+            setVisibility(View.VISIBLE);
+        }
+    }
+
+    // Add a method to detect if video is in fullscreen
+    public boolean isInFullscreen() {
+        return customView != null;
+    }
+
+    //-------------------------------
 
     private boolean desktopMode = false;
 
@@ -122,4 +177,5 @@ public class Browser extends WebView {
 
         void onTouch();
     }
+
 }
